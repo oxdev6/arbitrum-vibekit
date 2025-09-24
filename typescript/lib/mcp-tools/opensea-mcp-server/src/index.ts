@@ -7,6 +7,8 @@ import express from 'express'
 import type { NextFunction, Request, Response } from 'express'
 
 import { createServer } from './mcp.js'
+import { registerNftPlugin } from '@vibekit/onchain-actions-nft'
+import OpenSeaPlugin from '@vibekit/onchain-actions-opensea'
 
 dotenv.config()
 
@@ -20,6 +22,13 @@ async function main() {
   }
 
   const server = await createServer({ apiKey })
+
+  // Register NFT plugin (OpenSea)
+  try {
+    registerNftPlugin(OpenSeaPlugin)
+  } catch (e) {
+    console.error('Failed to register OpenSea NFT plugin:', e)
+  }
   if (httpEnabled) {
     const app = express()
 

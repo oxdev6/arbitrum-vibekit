@@ -316,6 +316,30 @@ export async function createServer(deps: OpenSeaDeps) {
       const fallback_to_collection = parsed.success ? parsed.data.fallback_to_collection : undefined
       const limit = parsed.success ? parsed.data.limit : undefined
       const cursor = parsed.success ? parsed.data.cursor : undefined
+
+      // Plugin-backed path
+      try {
+        const { getNftPlugin } = await import('@vibekit/onchain-actions-nft')
+        const plugin = getNftPlugin('opensea')
+        if (plugin) {
+          const orders = await plugin.getListings({
+            contractAddress: contract_address,
+            tokenId: String(token_id),
+            chainId: 42161,
+          })
+          if (Array.isArray(orders) && orders.length === 0 && fallback_to_collection && collection_slug) {
+            // Fall back to collection endpoint via HTTP for now (plugin has no collection method)
+            const params: Record<string, string | number> = { collection_slug }
+            if (limit !== undefined) params['limit'] = limit
+            if (cursor !== undefined) params['next'] = cursor
+            const colResult = await osFetch(`/api/v2/orders/${ARBITRUM_CHAIN}/seaport/listings`, deps.apiKey, params)
+            const nextCursor = (colResult.data as any)?.next ?? (colResult.data as any)?.next_cursor ?? null
+            return { content: [{ type: 'text', text: JSON.stringify({ rateLimit: colResult.rateLimit, nextCursor, data: colResult.data, fallback: 'collection_listings' }, null, 2) }] }
+          }
+          return { content: [{ type: 'text', text: JSON.stringify({ data: { orders } }, null, 2) }] }
+        }
+      } catch {}
+
       const params: Record<string, string | number> = {
         asset_contract_address: contract_address,
         token_ids: String(token_id),
@@ -388,6 +412,29 @@ export async function createServer(deps: OpenSeaDeps) {
       const fallback_to_collection = parsed.success ? parsed.data.fallback_to_collection : undefined
       const limit = parsed.success ? parsed.data.limit : undefined
       const cursor = parsed.success ? parsed.data.cursor : undefined
+
+      // Plugin-backed path
+      try {
+        const { getNftPlugin } = await import('@vibekit/onchain-actions-nft')
+        const plugin = getNftPlugin('opensea')
+        if (plugin) {
+          const orders = await plugin.getOffers({
+            contractAddress: contract_address,
+            tokenId: String(token_id),
+            chainId: 42161,
+          })
+          if (Array.isArray(orders) && orders.length === 0 && fallback_to_collection && collection_slug) {
+            const params: Record<string, string | number> = { collection_slug }
+            if (limit !== undefined) params['limit'] = limit
+            if (cursor !== undefined) params['next'] = cursor
+            const colResult = await osFetch(`/api/v2/orders/${ARBITRUM_CHAIN}/seaport/offers`, deps.apiKey, params)
+            const nextCursor = (colResult.data as any)?.next ?? (colResult.data as any)?.next_cursor ?? null
+            return { content: [{ type: 'text', text: JSON.stringify({ rateLimit: colResult.rateLimit, nextCursor, data: colResult.data, fallback: 'collection_offers' }, null, 2) }] }
+          }
+          return { content: [{ type: 'text', text: JSON.stringify({ data: { orders } }, null, 2) }] }
+        }
+      } catch {}
+
       const params: Record<string, string | number> = {
         asset_contract_address: contract_address,
         token_ids: String(token_id),

@@ -31,6 +31,8 @@
     "@types/node": "catalog:",
     "dotenv": "catalog:",
     "express": "catalog:",
+    "@vibekit/onchain-actions-nft": "workspace:*",
+    "@vibekit/onchain-actions-opensea": "workspace:*",
     "undici": "catalog:",
     "p-retry": "^6.2.1",
     "nodemon": "^3.1.9",
